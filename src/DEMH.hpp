@@ -3,6 +3,9 @@
 # include <iostream>
 # include <string>
 # include <vector>
+# include <cctype>
+
+# define LEN_TRS_STR 7
 
 class Transition {
     private:
@@ -52,5 +55,5 @@ class DEMH {
     */   
 };
 
-void build_DEMH(std::vector<int> m, std::vector<int> b, std::vector<std::string> t,
-          std::vector<std::string> c);
+void build_DEMH(std::vector<int> me, std::vector<int> bp, std::vector<std::string> tn,
+          std::vector<std::string> ch, std::vector<std::string> trs);
