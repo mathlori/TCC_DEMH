@@ -1,59 +1,23 @@
 # pragma once
 
-# include <iostream>
-# include <string>
-# include <vector>
-# include <cctype>
+# include "State.hpp"
+# include "Transition.hpp"
 
-# define LEN_TRS_STR 7
-
-class Transition {
-    private:
-        float duration_time;
-        std::vector<int> measures;
-        int destination;
-};
-
-class State {
-    private:
-        int id;
-        std::vector<Transition> transitions;
-        std::string chord;
-        bool is_final_state; 
-    public:
-        State(int i, std::string c, bool final_state);
-
-        int get_id();
-
-        std::string get_chord();
-
-        bool get_is_final_state();
-
-        void set_id(int num);
-
-        void set_chord(std::string c);
-        
-        void set_is_final_state(bool val);
-
-        void set_transitions(std::vector<Transition> new_transitions);
-};
+# include "libs.hpp"
 
 class DEMH {
     private:
         std::vector<int> measures; // compassos
         std::vector<int> bpms; // andamentos
-        std::vector<char> tones; // tonalidades
+        std::vector<std::string> tones; // tonalidades
 
         std::vector<State> states; // estados
         int initial_state; // estado inicial
         int final_state; // estado final
     
-    /*
+    
     public:
-        DEMH(std::vector<int> m, std::vector<int> b, std::vector<char> t,
-             std::vector<State> s, int initial, int final);
-    */   
+        DEMH(std::vector<int> measures, std::vector<int> bpms, std::vector<std::string> tones,
+          std::vector<std::string> chords, std::vector<std::string> transitions);
 };
 
-void build_DEMH(std::vector<int> me, std::vector<int> bp, std::vector<std::string> tn,
-          std::vector<std::string> ch, std::vector<std::string> trs);
