@@ -18,8 +18,9 @@ def main():
 		"(4|5) [] =4",
 	]
 
-	DEMH(measures, bpms, tones, chords, transitions)
-
+	demh = DEMH(measures, bpms, tones, chords, transitions)
+	demh.print_demh()
+    
 
 if __name__ == "__main__":
 	main()
