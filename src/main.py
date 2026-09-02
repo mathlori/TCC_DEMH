@@ -3,6 +3,11 @@ from DEMH import DEMH
 
 def main():
 
+	# Leitura do arquivo de entrada:
+	input_file = input("Nome do arquivo de entrada: ")
+	input_file = "input/"+input_file
+
+	print(input_file)
     # Declaração do DEMH de exemplo
 	
 	measures = [4]
@@ -18,7 +23,7 @@ def main():
 		"(4|5) [] =4",
 	]
 
-	demh = DEMH(measures, bpms, tones, chords, transitions)
+	demh = DEMH(input_file)
 	demh.print_demh()
     
 
