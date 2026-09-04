@@ -1,24 +1,14 @@
 class Transition:
-    def __init__(self, duration_time, measures, destination):
-        self.duration_time = duration_time
-        self.measures = list(measures)
+    def __init__(self, trigger_measure=None, destination=0,
+                 time_signature=0, new_bpm=0, new_tone=0,
+                 trigger_beat=None):
+
+        self.trigger_measure = list(trigger_measure or [])
+        self.trigger_beat = list(trigger_beat or [])
         self.destination = destination
 
-    # getters e setters
-    def get_duration_time(self):
-        return self.duration_time
+        # Alterações de métricas durante a música
+        self.new_time_signature = time_signature
+        self.new_bpm = new_bpm
+        self.new_tone = new_tone
 
-    def get_measures(self):
-        return self.measures
-
-    def get_destination(self):
-        return self.destination
-
-    def set_duration_time(self, duration_time):
-        self.duration_time = duration_time
-
-    def set_measures(self, measures):
-        self.measures = list(measures)
-
-    def set_destination(self, destination):
-        self.destination = destination

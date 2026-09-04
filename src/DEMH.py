@@ -1,89 +1,111 @@
 import re
-
+import time
 from State import State
 from Transition import Transition
 
 
-class DEMH: # Construtor
+class DEMH:
 	def __init__(self, input_file):
-
-		# Abertura do arquivo de entrada
-		with open(input_file, "r") as f:
+		with open(input_file, "r") as file:
 			print(f"> File {input_file} opened!")
 
-			section = -1 # seção atual sendo lida no arquivo
+			section = -1
 			sections = [[], [], [], [], []]
-			for line in f:
-				# altera a seção lida do arquivo
-				if line in ["[MEASURES]\n", "[BPMS]\n", "[TONES]\n", "[CHORDS]\n", "[TRANSITIONS]\n"]:
-					section+=1
-				elif line != "\n":
-					sections[section].append(line.replace('\n', ''))
+			for line in file:
+				line = line.strip()
+				if line in ["[TIME_SIGNATURE]", "[BPMS]", "[TONES]", "[CHORDS]", "[TRANSITIONS]"]:
+					section += 1
+				elif line:
+					sections[section].append(line)
 
+		self.time_signature = [int(value) for value in sections[0]]
+		self.bpms = [int(value) for value in sections[1]]
+		self.tones = sections[2]
+		chords = sections[3]
 
-			# Atribuição das variáveis do estado
-			
-			self.measures = sections[0] # compassos
-			self.bpms = sections[1] # bpms
-			self.tones = sections[2] # tons da música
+		self.states = [
+			State(state_id, chord, False)
+			for state_id, chord in enumerate(chords)
+		]
+		self.states.append(State(len(chords), "Qf", True))
+		self.initial_state = 0
+		self.final_state = len(self.states) - 1
 
-			chords = sections[3] # acordes da música
-			transitions = sections[4] # transições do DEMH
-		
-			self.states = [ # iteração pela lista de acordes para atribuir os estados
-				State(state_id, chord, False)
-				for state_id, chord in enumerate(chords)
+		for transition_text in sections[4]:
+			match = re.fullmatch(
+				r"\((\d+)\s*\|\s*(\d+)\)"
+				r"(?:\s+TRIGGERS\s*=\s*\[\s*MEASURES\s*:\s*\(([^)]*)\)\s*,?\s*BEATS\s*:\s*\(([^)]*)\)\s*\])?"
+				r"(?:\s+CHANGES\s*=\s*\{\s*TIME_SIGNATURE\s*:\s*([^\s}]*)\s+BPM\s*:\s*([^\s}]*)\s+TONE\s*:\s*([^\s}]*)\s*\})?",
+				transition_text,
+			)
+			if match is None:
+				raise ValueError(f"Invalid transition: {transition_text}")
+
+			(
+				origin,
+				destination,
+				trigger_measure_text,
+				trigger_beat_text,
+				new_time_signature,
+				new_bpm,
+				new_tone,
+			) = match.groups()
+
+			trigger_measure = [
+				int(value.strip())
+				for value in (trigger_measure_text or "").split(",")
+				if value.strip()
 			]
-			
-			# Adição do estado final
-			final_state_id = len(chords)
-			self.states.append(State(final_state_id, "Qf", True))
+			trigger_beat = [
+				int(value.strip())
+				for value in (trigger_beat_text or "").split(",")
+				if value.strip()
+			]
 
-			# Adição do estado inicial
-			self.initial_state = 0
-			self.final_state = len(self.states)
-
-			# Varredura das strings de transição
-			for transition_text in transitions:
-
-				# faz o match com o formato (x | y) [z*] = w
-				match = re.fullmatch(
-					r"\((\d+)\|(\d+)\)\s*\[([^]]*)\]\s*=\s*(\d+(?:\.\d+)?)",
-					transition_text.strip(),
+			self.states[int(origin)].add_transition(
+				Transition(
+					trigger_measure,
+					int(destination),
+					int(new_time_signature) if new_time_signature else 0,
+					int(new_bpm) if new_bpm else 0,
+					int(new_tone) if new_tone else 0,
+					trigger_beat,
 				)
+			)
 
-				# Se não for válido
-				if match is None:
-					raise ValueError(f"Invalid transition: {transition_text}")
-
-				# Atribui os valores às variáveis conforme a string
-				origin, destination, measures_text, duration = match.groups()
-				transition_measures = [
-					int(value.strip())
-					for value in measures_text.split(",")
-					if value.strip()
-				]
-
-				# Adiciona as transições aos respectivos estados
-				self.states[int(origin)].add_transition(
-					Transition(float(duration), transition_measures, int(destination))
-				)
-				
-			print("> DEMH LIDO COM SUCESSO!")
+		print("> DEMH LIDO COM SUCESSO!")
 
 	def print_demh(self):
-		# Iteração para cada estado
 		for state in self.states:
-			print(f"State {state.get_id()}:")
-			print(f"\tID: {state.get_id()}")
-			print(f"\tChord: {state.get_chord()}")
-			print(f"\tFinal State: {int(state.get_is_final_state())}")
+			print(f"State {state.id}:")
+			print(f"\tID: {state.id}")
+			print(f"\tChord: {state.chord}")
+			print(f"\tFinal State: {int(state.is_final_state)}")
 			print("\tTransitions:")
 
-            # Iteração para cada transição
-			for index, transition in enumerate(state.get_transitions()):
+			for index, transition in enumerate(state.transitions):
 				print(f"\t\tT{index}:")
-				print(f"\t\t\tDur: {transition.get_duration_time():g}")
-				print(f"\t\t\tDest: {transition.get_destination()}")
-				measures = "\t".join(str(value) for value in transition.get_measures()) # compassos
-				print(f"\t\t\tMeasures: {measures}\t")
+				print(f"\t\t\tDest: {transition.destination}")
+				print(f"\t\t\tTrigger measure IDs: {transition.trigger_measure}")
+				print(f"\t\t\tTrigger beat IDs: {transition.trigger_beat}")
+				print(f"\t\t\tChanges: TIME_SIGNATURE={transition.new_time_signature} BPM={transition.new_bpm} TONE={transition.new_tone}")
+
+	def execute(self):
+		current_state = self.initial_state
+		current_measure = 1
+		current_beat = 0
+		current_time_signature_id = 0
+		current_bpm_id = 0
+		current_tone_id = 0
+
+		while current_state != self.final_state:
+			time.sleep(60 / self.bpms[current_bpm_id])
+			current_beat += 1
+
+			if current_beat > self.time_signature[current_time_signature_id]:
+				current_beat = 0
+				current_measure += 1
+
+			print(f"> COMPASSO {current_measure}, TEMPO {current_beat}")
+
+            # IMPLEMENTAR TRANSIÇÃO DE ESTADOS
