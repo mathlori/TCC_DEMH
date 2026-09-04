@@ -91,42 +91,98 @@ class DEMH:
 				print(f"\t\t\tChanges: TIME_SIGNATURE={transition.new_time_signature} BPM={transition.new_bpm} TONE={transition.new_tone}")
 
 	def execute(self):
+		print("> Execução do DEMH foi iniciada!")
 		current_state = self.initial_state
 		current_measure = 1
-		current_beat = 1
+		current_beat = 0
 		current_time_signature_id = 0
 		current_bpm_id = 0
 		current_tone_id = 0
 
 		while current_state != self.final_state:
+			# EXECUÇÃO DO ACORDE: TODO
+
+			# Delay de tempo
 			time.sleep(60 / self.bpms[current_bpm_id])
 			current_beat += 1
 
 			if current_beat > self.time_signature[current_time_signature_id]:
-				current_beat = 0
+				current_beat = 1
 				current_measure += 1
 
 			print(f"> COMPASSO {current_measure}, TEMPO {current_beat}")
+			print(f"--- ACORDE {self.states[current_state].chord}")
 
-            # IMPLEMENTAR TRANSIÇÃO DE ESTADOS
-			# Lógica:
+			# IMPLEMENTAÇÃO TRANSIÇÃO DE ESTADOS
 
-            # Inicializar choosen_score e choosen (verificar se alguma transição for escolhida)
-            # Iterar cada transição do estado
-                # inicializar score de gatilhos
+			# Inicializar a transição escolhida e sua pontuação
+			choosen_score = 0
+			choosen_transition = None
 
-                # Verificar se algum dos compassos de gatilho da transicao[i] é igual ao compasso atual
-                    # Se for, incrementar score de gatilhos
+			# Iterar cada transição do estado
+			for transition in self.states[current_state].transitions:
+				# A transição sem gatilhos só pode ocorrer no último beat do compasso
+				if not transition.trigger_measure and not transition.trigger_beat:
+					if current_beat == self.time_signature[current_time_signature_id]:
+						if choosen_transition is None:
+							choosen_transition = transition
+							choosen_score = 0
+					continue
 
-                # Verificar se algum dos beats de gatilho da transição[i] é igual ao beat atual
-                    # Se for, incrementar score de gatilhos
-					
-                # Se o score atual for maior que o escolhido, substituir
-                    # Atribuir transição à variavel choosen (transição foi escolhida)
-				
-                # Verificar se até o momento não foi escolhido uma transição (ou seja, o score permanece em zero)
-                    # Se sim, verificar se ambas as transições não tem gatilho
+				# Inicializar score de gatilhos da transição
+				t_score = 0
 
-            # Se até houver uma transição escolhida
-                # Fazer atribuições conforme novo estado
-				# Sinalizar alterações de assinatura, bpm e compasso
+				# Verificar se algum compasso de gatilho é igual ao compasso atual
+				for measure in transition.trigger_measure:
+					# Se for, incrementar score de gatilhos
+					if measure == current_measure:
+						t_score += 1
+
+				# Verificar se algum beat de gatilho é igual ao beat atual
+				for beat in transition.trigger_beat:
+					# Se for, incrementar score de gatilhos
+					if beat == current_beat:
+						t_score += 1
+
+				# Só transições com gatilho correspondente podem ser escolhidas
+				if t_score > choosen_score:
+					choosen_score = t_score
+					choosen_transition = transition
+
+			# Nenhuma transição ocorre quando não há gatilho correspondente
+			if choosen_transition is None:
+				continue
+
+			# Fazer atribuições conforme novo estado
+
+			print(f"\t-Executando transição para estado {choosen_transition.destination}")
+			current_state = choosen_transition.destination
+
+			# Sinalizar alterações de assinatura, BPM e tom
+			if choosen_transition.new_time_signature != current_time_signature_id:
+				old_value = self.time_signature[current_time_signature_id]
+				new_value = self.time_signature[choosen_transition.new_time_signature]
+				print(
+					f"\t- Houve uma mudança de assinatura de tempo: "
+					f"de {old_value}/4 para {new_value}/4."
+				)
+				current_time_signature_id = choosen_transition.new_time_signature
+
+			if choosen_transition.new_bpm != current_bpm_id:
+				old_value = self.bpms[current_bpm_id]
+				new_value = self.bpms[choosen_transition.new_bpm]
+				print(
+					f"\t- Houve uma mudança de andamento: "
+					f"de {old_value}bpm para {new_value}bpm."
+				)
+				current_bpm_id = choosen_transition.new_bpm
+
+			if choosen_transition.new_tone != current_tone_id:
+				old_value = self.tones[current_tone_id]
+				new_value = self.tones[choosen_transition.new_tone]
+				print(
+					f"\t- Houve uma mudança de tom: "
+					f"de {old_value} para {new_value}."
+				)
+				current_tone_id = choosen_transition.new_tone
+        
