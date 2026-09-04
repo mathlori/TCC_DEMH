@@ -93,7 +93,7 @@ class DEMH:
 	def execute(self):
 		current_state = self.initial_state
 		current_measure = 1
-		current_beat = 0
+		current_beat = 1
 		current_time_signature_id = 0
 		current_bpm_id = 0
 		current_tone_id = 0
@@ -109,3 +109,24 @@ class DEMH:
 			print(f"> COMPASSO {current_measure}, TEMPO {current_beat}")
 
             # IMPLEMENTAR TRANSIÇÃO DE ESTADOS
+			# Lógica:
+
+            # Inicializar choosen_score e choosen (verificar se alguma transição for escolhida)
+            # Iterar cada transição do estado
+                # inicializar score de gatilhos
+
+                # Verificar se algum dos compassos de gatilho da transicao[i] é igual ao compasso atual
+                    # Se for, incrementar score de gatilhos
+
+                # Verificar se algum dos beats de gatilho da transição[i] é igual ao beat atual
+                    # Se for, incrementar score de gatilhos
+					
+                # Se o score atual for maior que o escolhido, substituir
+                    # Atribuir transição à variavel choosen (transição foi escolhida)
+				
+                # Verificar se até o momento não foi escolhido uma transição (ou seja, o score permanece em zero)
+                    # Se sim, verificar se ambas as transições não tem gatilho
+
+            # Se até houver uma transição escolhida
+                # Fazer atribuições conforme novo estado
+				# Sinalizar alterações de assinatura, bpm e compasso
