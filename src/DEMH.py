@@ -9,31 +9,37 @@ from ChordDictionary import ChordDictionary
 
 class DEMH:
 	def __init__(self, input_file):
+		# Abertura do arquivo.demh
 		with open(input_file, "r") as file:
 			print(f"> File {input_file} opened!")
 
+			# Seções do arquivo
 			section = -1
 			sections = [[], [], [], [], []]
 			for line in file:
 				line = line.strip()
 				if line in ["[TIME_SIGNATURE]", "[BPMS]", "[TONES]", "[CHORDS]", "[TRANSITIONS]"]:
 					section += 1
-				elif line:
+				elif line: # Adição do elemento do arquivo nas seções
 					sections[section].append(line)
 
+		# Atribuindo varíaveis do DEMH com base no localizado no arquivo
 		self.time_signature = [int(value) for value in sections[0]]
 		self.bpms = [int(value) for value in sections[1]]
 		self.tones = sections[2]
 		chords = sections[3]
 
+		# Criação de estado para cada acorde 
 		self.states = [
 			State(state_id, chord, False)
 			for state_id, chord in enumerate(chords)
 		]
+
 		self.states.append(State(len(chords), "Qf", True))
 		self.initial_state = 0
 		self.final_state = len(self.states) - 1
 
+		# Leitura das transições conforme texto
 		for transition_text in sections[4]:
 			match = re.fullmatch(
 				r"\((\d+)\s*\|\s*(\d+)\)"
@@ -44,6 +50,7 @@ class DEMH:
 			if match is None:
 				raise ValueError(f"Invalid transition: {transition_text}")
 
+			# Atribuição de elementos das transições
 			(
 				origin,
 				destination,
@@ -52,8 +59,9 @@ class DEMH:
 				new_time_signature,
 				new_bpm,
 				new_tone,
-			) = match.groups()
+			) = match.groups() 
 
+			# Gatilhos das transições
 			trigger_measure = [
 				int(value.strip())
 				for value in (trigger_measure_text or "").split(",")
@@ -65,6 +73,7 @@ class DEMH:
 				if value.strip()
 			]
 
+			# Transição adicionada ao estado
 			self.states[int(origin)].add_transition(
 				Transition(
 					trigger_measure,
@@ -86,6 +95,7 @@ class DEMH:
 			print(f"\tFinal State: {int(state.is_final_state)}")
 			print("\tTransitions:")
 
+			# iteração pelas transições do estado
 			for index, transition in enumerate(state.transitions):
 				print(f"\t\tT{index}:")
 				print(f"\t\t\tDest: {transition.destination}")
@@ -94,6 +104,7 @@ class DEMH:
 				print(f"\t\t\tChanges: TIME_SIGNATURE={transition.new_time_signature} BPM={transition.new_bpm} TONE={transition.new_tone}")
 
 	def execute(self):
+		# Verificação de áudio
 		if not musicpy.has_audio_interface:
 			raise RuntimeError(
 				"A saída de áudio não foi inicializada pelo pygame. "
